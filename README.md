@@ -38,6 +38,8 @@ Or no unread:
 
 2. `gh noti read`: mark all notifications as read
 
+3. `gh noti read <id>`: use the id in the list to mark one thread as read
+
 ## Todo
 - [x] mark all as read, https://docs.github.com/en/rest/reference/activity#mark-notifications-as-read
 - [x] mark one as read by id, https://docs.github.com/en/rest/reference/activity#mark-a-thread-as-read
