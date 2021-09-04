@@ -2,8 +2,9 @@
 
 Github CLI extension to check unread notifications in this [page](https://github.com/notifications).
 
-Still WIP.
+As the feature is available in `gh`, see [this issue](https://github.com/cli/cli/issues/659).
 
+Still WIP.
 
 ## Installation
 
@@ -19,9 +20,7 @@ brew install jq
 
 ## Usage
 
-```sh
-gh noti
-```
+1. `gh noti` : list all unread notifications
 
 ```
 ID          Repo                         Type         Title                                                                                                 Reason            Updated
@@ -37,6 +36,14 @@ Or no unread:
 ✨ No unread notifications.
 ```
 
+2. `gh noti read`: mark all notifications as read
+
 ## Todo
-- [ ] mark all as read
-- [ ] mark one as read by id
+- [x] mark all as read, https://docs.github.com/en/rest/reference/activity#mark-notifications-as-read
+- [x] mark one as read by id, https://docs.github.com/en/rest/reference/activity#mark-a-thread-as-read
+- [ ] open a unread notification thread url
+
+## Ref
+* [GitHub CLI 2.0 includes extensions! | The GitHub Blog](https://github.blog/2021-08-24-github-cli-2-0-includes-extensions/)
+* [Creating GitHub CLI extensions - GitHub Docs](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions)
+* no API for marking a notification as 'Done' status as it seems relatively new and maybe changed later, see https://github.community/t/no-api-command-for-new-done-state-of-notifications/122508

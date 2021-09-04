@@ -1,56 +1,67 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 
-# get unread noti, extract & format json
-UNREAD_NOTI=`gh api notifications --jq '.[] | {id: .id, reason: .reason, updated: .updated_at, title: .subject.title, url: .subject.url, type: .subject.type, repo: .repository.full_name}'`
-UNREAD_NOTI_COUNT=`echo $UNREAD_NOTI | jq -s length`
+help() {
+    cat <<-EOF
+[GitHub CLI] extension to check unread notifications
 
-if [ "$UNREAD_NOTI_COUNT" = 0 ]; then
-  echo "✨ No unread notifications."
-  exit 0
+Usage:
+    gh noti             list all unread notifications
+    gh noti read        mark all notifications as read
+    gh noti read <id>   mark a thread with <id> as read
+
+EOF
+}
+
+list() {
+    # get unread noti, extract & format json
+    UNREAD_NOTI=`gh api notifications --jq '.[] | {id: .id, reason: .reason, updated: .updated_at, title: .subject.title, url: .subject.url, type: .subject.type, repo: .repository.full_name}'`
+    UNREAD_NOTI_COUNT=`echo $UNREAD_NOTI | jq -s length`
+
+    if [ "$UNREAD_NOTI_COUNT" = 0 ]; then
+        echo "✨ No unread notifications."
+        exit 0
+    fi
+
+    # format unread noti as table
+    F_UNREAD_NOTI=`echo $UNREAD_NOTI | jq -s -r '["ID","Repo","Type","Title","Reason","Updated"], ["-------","------","-------","---------------","------","-------------------"], (.[] | [.id, .repo, .type, .title, .reason, .updated]) | @tsv' | column -ts $'\t'`
+    printf '%s\n' "$F_UNREAD_NOTI" # use printf instead of echo can keep tab char
+}
+
+read() {
+    id="$1"
+    if [[ -z $id ]]; then
+        gh api notifications --method PUT --silent && echo "All notifications read~"          # mark all noti as read
+    else
+        gh api notifications/threads/$id --method PATCH --silent && echo "Thread $id read~"   # mark thread with <id> as read
+    fi
+}
+
+# main
+if [[ $# -eq 0 ]]; then
+    list
+    exit 0
 fi
 
-# format unread noti as table
-F_UNREAD_NOTI=`echo $UNREAD_NOTI | jq -s -r '["ID","Repo","Type","Title","Reason","Updated"], ["-------","------","-------","---------------","------","-------------------"], (.[] | [.id, .repo, .type, .title, .reason, .updated]) | @tsv' | column -ts $'\t'`
-printf '%s\n' "$F_UNREAD_NOTI" # use printf instead of echo can keep tab char
-
-# nullToZero () {
-#     if [ "$1" = "null" ]; then
-#       echo 0
-#     else
-#       echo $1
-#     fi
-# }
-
-# echo "Hello gh-noti!"
-
-# Snippets to help get started:
-
-# Determine if an executable is in the PATH
-# if ! type -p ruby >/dev/null; then
-#   echo "Ruby not found on the system" >&2
-#   exit 1
-# fi
-
-# Pass arguments through to another command
-# gh issue list "$@" -R cli/cli
-
-# Using the gh api command to retrieve and format information
-# QUERY='
-#   query($endCursor: String) {
-#     viewer {
-#       repositories(first: 100, after: $endCursor) {
-#         nodes {
-#           nameWithOwner
-#           stargazerCount
-#         }
-#       }
-#     }
-#   }
-# '
-# TEMPLATE='
-#   {{- range $repo := .data.viewer.repositories.nodes -}}
-#     {{- printf "name: %s - stargazers: %v\n" $repo.nameWithOwner $repo.stargazerCount -}}
-#   {{- end -}}
-# '
-# exec gh api graphql -f query="${QUERY}" --paginate --template="${TEMPLATE}"
+while [ $# -gt 0 ]; do
+    case "$1" in
+    -h | --help)
+        help
+        exit 0
+        ;;
+    read)
+        if [[ -z "$2" ]]; then
+            read
+        else
+            shift
+            input=$*
+            read "$input"
+        fi
+        ;;
+    *)
+        help >&2
+        exit 1
+        ;;
+    esac
+    shift
+done
